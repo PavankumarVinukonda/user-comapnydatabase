@@ -78,27 +78,56 @@ app.post('/users/insert', (req, res) => {
     INSERT INTO user(userName,email,mobile,password,companyId)
     VALUES('${user_name}','${email}','${mobile}','${password}',' ${companyId}');
     `
-
-    db.query(sql, (err) => {
+    const getdata = `SELECT * from user;`
+    db.query(getdata, (err, result) => {
         if (err) {
-            res.send('an error occurred while Insering data into the user Table' + err.message )
-        } else{
-        res.send('data inserted into the table successfully')}
+            res.send('Error: ' + err.message);
+        } else {
+            const response = result.filter(item => item.email.toLowerCase() === email.toLowerCase());
+
+            if (response.length === 0) {
+                db.query(sql, (err) => {
+                    if (err) {
+                        res.send('an error occurred while Insering data into the user Table' + err.message )
+                    } else{
+                    res.send('data inserted into the table successfully')}
+                })
+            } else {
+                res.send('user already exists')
+            }
+
+        }
     })
+
+   
 })
 
 
 // for inserting data into the company table
-app.post('/company/insert' , (req, res) => {
+app.post('/company/insert' , async (req, res) => {
     const {companyName} = req.body
     const sql = `INSERT INTO company(companyName) VALUES ('${companyName}');`
 
-    db.query(sql, (err) => {
+    const getData = `SELECT * FROM company;`
+    db.query(getData,(err,result) => {
         if (err) {
-            res.send('An erro occured while Insertinfg data into the company table ' + err.message)
+            res.send('Error' + err.message)
+        } else {
+            const response = result.filter(item => item.companyName.toLowerCase() === companyName.toLowerCase());
+            if (response.length === 0) {
+                db.query(sql, (err) => {
+                        if (err) {
+                            res.send('An erro occured while Insertinfg data into the company table ' + err.message)
+                        }
+                        res.send('data inserted into the table successfully')
+                    })
+            } else {
+                res.send('company name already exists')
+            }
         }
-        res.send('data inserted into the table successfully')
     })
+
+    
 
 })
 
@@ -106,15 +135,10 @@ app.post('/company/insert' , (req, res) => {
 // function to get the user by the company Id
 
 app.get('/getUsers', (req, res) => {
-
+    const {id} = req.headers
+    
     const sql = `
-    SELECT 
-    *
-    FROM
-    company
-        INNER JOIN 
-            user
-                ON company.companyId = user.companyId;
+    select * from user where companyId ='${id}';
     `
     db.query(sql, (err,results) => {
         if (err) {
